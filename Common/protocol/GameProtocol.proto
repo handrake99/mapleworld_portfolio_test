@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package MapleWorldAssignment.Common.Protocol;
+
+enum PacketType {
+  CHAT = 0;
+  SYSTEM = 1;
+}
+
+message ChatMessage {
+  string sender = 1;
+  string message = 2;
+}
+
+message SystemMessage {
+  string event_name = 1;
+  int32 code = 2;
+}
+
+message GamePacket {
+  PacketType type = 1;
+  bytes payload = 2;
+}

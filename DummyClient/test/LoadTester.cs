@@ -25,8 +25,8 @@ namespace MapleWorldAssignment.DummyClient.Test
             {
                 var msg = new ChatMessage
                 {
-                    UserId = 0, // Server will assign
-                    Content = $"Hello from DummyClient at {DateTime.Now.Ticks}"
+                    Sender = "DummyUser", // Placeholder
+                    Message = $"Hello from DummyClient at {DateTime.Now.Ticks}"
                 };
 
                 await _socket.SendAsync(msg);

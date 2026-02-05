@@ -13,8 +13,13 @@ namespace MapleWorldAssignment.DummyClient.Test
         private NetworkStream _stream;
         private bool _isConnected;
         
-        public event Action<ChatMessage> OnMessageReceived;
-
+        // Removed specific event to rely on Dispatcher or expose GamePacket?
+        // Let's expose GamePacket so Program can decide? 
+        // Or better, let's follow the pattern: Dispatcher handles it.
+        // But for the Client to be useful, maybe we just expose the Dispatcher or use it internally?
+        // Let's just use Dispatcher.Dispatch() here.
+        // And Program.cs will register the handler.
+        
         public async Task ConnectAsync(string ip, int port)
         {
             _client = new TcpClient();
@@ -30,10 +35,17 @@ namespace MapleWorldAssignment.DummyClient.Test
         {
             if (!_isConnected) return;
 
-            byte[] packet = PacketHandler.Serialize(message);
+            // Wrap in GamePacket
+            GamePacket packet = new GamePacket
+            {
+                Type = PacketType.Chat,
+                Payload = message.ToByteString()
+            };
+
+            byte[] buffer = PacketHandler.Serialize(packet);
             try 
             {
-                await _stream.WriteAsync(packet, 0, packet.Length);
+                await _stream.WriteAsync(buffer, 0, buffer.Length);
             }
             catch (Exception ex)
             {
@@ -71,8 +83,10 @@ namespace MapleWorldAssignment.DummyClient.Test
                     }
 
                     // Deserialize
-                    ChatMessage message = PacketHandler.Deserialize(bodyBuffer);
-                    OnMessageReceived?.Invoke(message);
+                    GamePacket packet = PacketHandler.Deserialize(bodyBuffer);
+                    
+                    // Dispatch
+                    PacketDispatcher.Dispatch(packet);
                 }
             }
             catch (Exception ex)

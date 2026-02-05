@@ -1,0 +1,4 @@
+{
+  "ServerPort" : 3000,
+  "RedisConnectionString" : "localhost:6379,abortConnect=false"
+}

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using MapleWorldAssignment.DummyClient.Test;
 using MapleWorldAssignment.Common.Utility;
+using MapleWorldAssignment.Common.Protocol;
 
 namespace MapleWorldAssignment.DummyClient
 {
@@ -11,10 +12,11 @@ namespace MapleWorldAssignment.DummyClient
         {
             Logger.Info("Starting DummyClient...");
 
-            ClientSocket socket = new ClientSocket();
-            socket.OnMessageReceived += (msg) => {
-                Logger.Info($"[Client Recv] User {msg.UserId}: {msg.Content}");
-            };
+            var socket = new ClientSocket();
+            // Register Handler
+            PacketDispatcher.RegisterHandler<ChatMessage>(PacketType.Chat, (msg) => {
+                 Logger.Info($"[Client Recv] User {msg.Sender}: {msg.Message}");
+            });
 
             try 
             {

@@ -59,9 +59,9 @@ namespace MapleWorldAssignment.Common.Protocol
             return packet;
         }
 
-        public static ChatMessage Deserialize(byte[] body)
+        public static GamePacket Deserialize(byte[] body)
         {
-            return ChatMessage.Parser.ParseFrom(body);
+            return GamePacket.Parser.ParseFrom(body);
         }
 
         public static int ParseHeader(byte[] header)

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Common.Core;
 using MapleWorldAssignment.Common.Protocol;
 using MapleWorldAssignment.Common.Utility;
 using StackExchange.Redis;
@@ -7,15 +8,13 @@ using Google.Protobuf;
 
 namespace MapleWorldAssignment.GameServer.Manager
 {
-    public class ChatManager
+    public class ChatManager : Singleton<ChatManager>
     {
         private ConnectionMultiplexer _redis;
         private ISubscriber _subscriber;
         private const string ChannelName = "GlobalChat";
 
-        public event Action<ChatMessage> OnMessageFromRedis;
-
-        public ChatManager()
+        private ChatManager()
         {
             // Use ConfigManager for connection string
             string redisConnectionString = ConfigManager.Instance.RedisConnectionString;
@@ -29,8 +28,23 @@ namespace MapleWorldAssignment.GameServer.Manager
                     try 
                     {
                         byte[] body = (byte[])message;
-                        ChatMessage chatMsg = PacketHandler.Deserialize(body);
-                        OnMessageFromRedis?.Invoke(chatMsg);
+                        // Redis message is now expected to be 'GamePacket' protobuf data?
+                        // Or just ChatMessage data?
+                        // If we publish 'GamePacket', we can extend to SystemMessages via Redis too.
+                        // Let's assume we publish GamePacket bytes.
+                        GamePacket packet = GamePacket.Parser.ParseFrom(body);
+                        
+                        // We need to notify ServerSocket to broadcast this packet.
+                        // PacketDispatcher logic is mostly for INCOMING client packets.
+                        // But here we are just relaying.
+                        
+                        // Wait, ChatManager event is `Action<ChatMessage> OnMessageFromRedis`.
+                        // ServerSocket expects `Broadcast(GamePacket)`.
+                        
+                        // If we receive a GamePacket (which contains Type + Payload),
+                        // and we want to invoke OnMessageFromRedis which is Action<GamePacket> now?
+                        
+                        OnMessageFromRedis?.Invoke(packet);
                     }
                     catch (Exception ex)
                     {
@@ -46,18 +60,20 @@ namespace MapleWorldAssignment.GameServer.Manager
             }
         }
 
+        public event Action<GamePacket> OnMessageFromRedis;
+
         public void PublishMessage(ChatMessage message)
         {
             if (_subscriber != null && _subscriber.IsConnected())
             {
-                byte[] data = message.ToByteArray(); // Just the body is enough if we trust our PacketHandler deserializer on the other side?
-                // Wait, ReceiveBroadcast logic in ServerSocket assumes full packet? 
-                // No, ServerSocket.Broadcast calls PacketHandler.Serialize(message) which adds header.
-                // So here we should pass ONLY the protobuf body (or whatever we decide).
-                // Let's pass the raw protobuf body.
-                // The subscriber side (above) deserializes it using PacketHandler.Deserialize (which expects just body usually, wait).
-                // PacketHandler.Deserialize calls `ChatMessage.Parser.ParseFrom(body)`. This expects only the protobuf data.
-                // So publishing `message.ToByteArray()` is correct.
+                // Wrap in GamePacket
+                GamePacket packet = new GamePacket
+                {
+                    Type = PacketType.Chat,
+                    Payload = message.ToByteString()
+                };
+                
+                byte[] data = packet.ToByteArray();
                 
                 _subscriber.Publish(ChannelName, data);
             }
