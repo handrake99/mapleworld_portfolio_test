@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package MapleWorldAssignment.Common.Protocol;
+
+message ChatMessage {
+  int32 userId = 1;
+  string content = 2;
+}
