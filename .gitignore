@@ -1,0 +1,22 @@
+# Build Folders
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio / IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Other
+*.pdb
